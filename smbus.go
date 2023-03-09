@@ -63,6 +63,28 @@ func Open(bus int, addr uint8) (*Conn, error) {
 	return &Conn{f: f}, nil
 }
 
+// OpenFile opens a connection to the i2c bus number.
+// Users should call SetAddr afterwards to have a properly configured SMBus connection.
+func OpenFile(bus string) (*Conn, error) {
+	f, err := os.OpenFile(bus, os.O_RDWR, 0600)
+	if err != nil {
+		return nil, err
+	}
+	return &Conn{f: f}, nil
+}
+
+// Open opens a connection to the i2c bus number at address addr.
+func Open(bus string, addr uint8) (*Conn, error) {
+	f, err := os.OpenFile(bus, os.O_RDWR, 0600)
+	if err != nil {
+		return nil, err
+	}
+	if err := ioctl(f.Fd(), i2cSlave, uintptr(addr)); err != nil {
+		return nil, err
+	}
+	return &Conn{f: f}, nil
+}
+
 // Write sends buf to the remote i2c device.
 // The interpretation of the message is implementation dependant.
 func (c *Conn) Write(buf []byte) (int, error) {
